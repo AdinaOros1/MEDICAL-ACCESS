@@ -29,6 +29,15 @@ def sign_up(
     with sqlite3.connect(DBFILENAME) as conn:
         cur = conn.cursor()
         cur.execute(
+            "SELECT user_id FROM user WHERE username = ?", (username,)
+        )
+        existing_user = cur.fetchone()
+
+        if existing_user:
+            return -1 
+        password_hash = generate_password_hash(password)
+        
+        cur.execute(
             "INSERT INTO user (username, first_name, last_name, password_hash, gender, email, age, phone_number) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
             (
                 username,

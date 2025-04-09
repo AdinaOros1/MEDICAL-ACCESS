@@ -1,0 +1,13 @@
+<div class="bg-secondary text-white py-4 d-flex justify-content-center align-items-center flex-column">
+    <div class="text-center">
+    <img src="{{ url_for('static', filename='MEDICAL.png') }}" alt="Logo" class="rounded mx-auto d-block">
+    <h1>This is Medical Access, a web application that helps you make reservations for medical recovery clinics and see the number of places available in them.</h1>
+    <h2>This web application has 2 interfaces, one for the user and one for the clinic. Below you will see the link for user and the clinic authentication pages.</h2>
+    <div class="row mt-4">
+        <div class="col-12">
+            <a href="{{ url_for('index_user') }}" class="btn btn-primary mr-2">User Interface</a>
+            <a href="{{ url_for('index_clinic') }}" class="btn btn-primary">Clinic Interface</a>
+        </div>
+    </div>
+</div>
+</div>

@@ -1,0 +1,32 @@
+{% include "header_administrator.html" %}
+  <div class="container text-center text-bg-secondary p-3">
+    <div class="row mb-4">
+      <div class="col-12">
+      <h1>Medical Access</h1>
+      <h3>This is the page for clinic authentication</h3>
+      
+      </div>
+    </div>
+
+    
+
+  <div class="row mb-4">
+    <div class="col-12">
+      {% if logged_in %}
+      <p>Hello {{username}} !</p>
+      <p>Views {{views}}</p>
+      <form method="POST" action="/logout_clinic">
+        <input type="submit" value="Log out">
+      </form>
+    {% else %}
+    <h3>Welcome to Medical Access!</h3>
+    <p>This web application allows users to search for registered clinics, view the number of available slots for each medical service, and book reservations easily.
+        As a clinic administrator, you can attract more patients by adding your clinic to our platform. After you sign up or log in if you've already created an account. Simply click the Add Clinic button and fill in your clinic's details — it's a quick way to share your services.</p>
+    {% endif %}
+    
+  </body>
+    </div>
+  </div>
+</div>
+
+

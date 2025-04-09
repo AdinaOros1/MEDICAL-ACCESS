@@ -16,10 +16,6 @@ app = Flask(__name__)
 app.secret_key = b"ec68a703c4a06b435b5654c34da1d8c6ae35ffcf060c7d70a6ab4f9cec2f2025"
 
 
-########################################
-# Routes des pages principales du site #
-########################################
-
 
 def login_required(f):
     @wraps(f)
@@ -43,13 +39,13 @@ def verify_login():
     password = request.form['password']
     error = None
     if username not in user_data:
-        error = "Nom d'utilisateur incorrect"
+        error = "Incorrect username"
         return Response(error)
       
     else:
         password_hash = user_data[username]["password_hash"]
         if not (check_password_hash(password_hash, password)):
-            error = "Mot de passe incorrect"
+            error = "Incorrect password"
             return Response(error)
     if error is None:
         session.clear()
@@ -62,10 +58,10 @@ def verify_login():
 @app.post("/logout")
 def logout():
     session.clear()
-    return redirect(url_for("home"))
+    return redirect(url_for("login_form"))
 
 
-# Retourne une page principale avec le nombre de recettes
+
 @app.get("/")
 def home():
     if "username" in session:
@@ -81,22 +77,22 @@ def home():
         return render_template("index.html", logged_in=False, username=None, views=None)
 
 
-@app.get("/new_user")
+@app.get("/sign_up")
 def new_user_form():
-    return render_template("new_user.html")
+    return render_template("sign_up.html")
 
 
-@app.post("/new_user")
+@app.post("/sign_up")
 def add_new_user():
     username = request.form.get("username")
     password = request.form.get("password")
     error = None
     if not(username):
-        error = "Veuillez entrer un nom d'utilisateur"
+        error = "Please enter a username"
     elif not(password):
-        error = "Veuillez entrer un mot de passe"
+        error = "Please enter a password"
     elif username in user_data:
-        error = "Ce nom d'utilisateur existe déjà"
+        error = "This username already exists"
     if error is None:
         password_hash = generate_password_hash(password)
         user_data[username] = {'views': 0, 'password_hash': password_hash}
@@ -105,92 +101,86 @@ def add_new_user():
         session["username"]= username
         return redirect(url_for('home'))
     else:
-        return render_template("new_user.html", error=error) 
+        return render_template("sign_up.html", error=error) 
+    
+@app.route("/index_user")
+def index_user():
+    if "username" in session:
+        username = session["username"]
+        reservations = []  # Replace with real data if needed
+        return render_template("index_user.html", logged_in=True, username=username, reservations=reservations)
+    return render_template("index_user.html", logged_in=False)
 
 
+#clinic routes
 
-# Retourne les résultats de la recherche à partir de la requête "query"
-@app.get("/search")
-def search():
-    if "page" in request.args:
-        page = int(request.args["page"])
+@app.route("/index_clinic")
+def index_clinic():
+    return render_template("index_clinic.html")
+
+
+@app.get("/login_clinic")
+def login_clinic_form():
+    return render_template("login_clinic.html")
+
+
+@app.post("/login_clinic")
+def verify_login_clinic():
+    username = request.form['username']
+    password = request.form['password']
+    error = None
+    if username not in user_data:
+        error = "Incorrect username"
+        return Response(error)
+      
     else:
-        page = 1
-    if "query" in request.args:
-        query = request.args["query"]
+        password_hash = user_data[username]["password_hash"]
+        if not (check_password_hash(password_hash, password)):
+            error = "Incorrect password"
+            return Response(error)
+    if error is None:
+        session.clear()
+        session["username"] = username
+        return redirect(url_for("home"))
     else:
-        query = ""
-    found = model.search(query, page)
-    return render_template("search.html", found=found)
+        return redirect(url_for("login_clinic_form"))
 
 
-# Retourne le contenu d'une recette d'identifiant "id"
-@app.get("/read/<id>")
-def read(id):
-    recipe = model.read(int(id))
-    return render_template("read.html", recipe=recipe)
+@app.post("/logout_clinic")
+def logout_clinic():
+    session.clear()
+    return redirect(url_for("index_clinic"))
+
+@app.get("/sign_up_clinic")
+def sign_up_form():
+    return render_template("sign_up_clinic.html")
 
 
-@app.get("/create")
-@login_required
-def create_form():
-    return render_template("create.html")
+@app.post("/sign_up_clinic")
+def sign_up_clinic():
+    username = request.form.get("username")
+    password = request.form.get("password")
+    error = None
+    if not(username):
+        error = "Please enter a username"
+    elif not(password):
+        error = "Please enter a password"
+    elif username in user_data:
+        error = "This username already exists"
+    if error is None:
+        password_hash = generate_password_hash(password)
+        user_data[username] = {'views': 0, 'password_hash': password_hash}
+        
+        session.clear()
+        session["username"]= username
+        return redirect(url_for('home'))
+    else:
+        return render_template("sign_up_clinic.html", error=error) 
 
 
-@app.get("/update/<id>")
-@login_required
-def update_form(id):
-    recipe = model.read(int(id))
-    return render_template("update.html", recipe=recipe)
 
 
-@app.get("/delete/<id>")
-@login_required
-def delete_form(id):
-    entry = model.read(int(id))
-    return render_template("delete.html", id=id, title=entry["title"])
 
 
-############################################
-# Routes pour modifier les données du site #
-############################################
 
 
-def parse_user_list(user_list):
-    l = user_list.strip().split("-")
-    l = [e.strip() for e in l]
-    l = [e for e in l if len(e) > 0]
-    return l
-
-
-# Fonction qui facilite la création d'une recette
-def post_data_to_recipe(form_data):
-    ingredients = parse_user_list(form_data["ingredients"])
-    stages = parse_user_list(form_data["stages"])
-    return {
-        "title": form_data["title"],
-        "description": form_data["description"],
-        "img": form_data["img"],
-        "duration": form_data["duration"],
-        "ingredients": ingredients,
-        "stages": stages,
-    }
-
-
-@app.post("/create")
-def create_post():
-    id = model.create(post_data_to_recipe(request.form))
-    return redirect(url_for("read", id=str(id)))
-
-
-@app.post("/update/<id>")
-def update_post(id):
-    id = int(id)
-    model.update(id, post_data_to_recipe(request.form))
-    return redirect(url_for("read", id=str(id)))
-
-
-@app.post("/delete/<id>")
-def delete_post(id):
-    model.delete(int(id))
-    return redirect(url_for("home"))
