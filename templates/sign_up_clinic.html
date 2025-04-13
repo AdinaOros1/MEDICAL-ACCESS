@@ -10,8 +10,20 @@
 
   <body>
     <h1>Sign up clinic</h1>
+    {%if error%}
+    <p>error:{{error}}</p>
+    {%endif%}
     <form method="POST" action="/sign_up_clinic">
-      <input type="text" name="username" placeholder="Username">
+      <input type="text" name="clinic_username" placeholder="Clinic username">
+      <input type="text" name="clinic_name" placeholder="Clinic Name">
+      <input type="text" name="location" placeholder="Location">
+
+      <label for="type">Clinic Type:</label>
+<select name="type" id="type">
+  <option value="State">State</option>
+  <option value="Private">Private</option>
+</select>
+     
       <input type="password" name="password" placeholder="Password">
       <input type="submit" value="Create account">
     </form>

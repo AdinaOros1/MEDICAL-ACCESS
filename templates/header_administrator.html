@@ -16,16 +16,18 @@
 
     <div class="collapse navbar-collapse justify-content-center" id="navbarNav">
         <ul class="navbar-nav ms-auto">
-          <li class="nav-item"><a class="nav-link" href="/sign_up_clinic">Sign up</a></li>
-          <li class="nav-item"><a class="nav-link" href="/login_clinic">Log in</a></li>
-    
-          {%if 'username' in session%}
-          <li class="nav-item"><a class="nav-link" href="/add_medical_service">Add clinic</a></li>
+          
+          {%if 'clinic_username' in session%}
+          <li class="nav-item"><a class="nav-link" href="/add_medical_service">Add medical service</a></li>
           <li class="nav-item">
             <form method="POST" action="/logout" style="display: inline;">
               <input class="btn btn-link nav-link" type="submit" value="Log out">
             </form>
           </li>
+          {%else%}
+          <li class="nav-item"><a class="nav-link" href="/sign_up_clinic">Sign up</a></li>
+          <li class="nav-item"><a class="nav-link" href="/login_clinic">Log in</a></li>
+    
           {%endif%}
         </ul>
       </div>

@@ -1,5 +1,6 @@
 import sqlite3
 import math
+from werkzeug.security import generate_password_hash, check_password_hash
 
 
 DBFILENAME = "medical_access.sqlite"
@@ -64,20 +65,131 @@ def read(reservation_id):
     return found
 
 
-def make_reservation(user_id, clinic_id, medical_service, date):
-    reservation_id = db_insert(
-        "INSERT INTO reservation (user_id, clinic_id, medical_service, date) VALUES (:user_id, :clinic_id, :medical_service, :date)",
-        reservation,
-    )
+def login_user_db(username, password):
+    with sqlite3.connect(DBFILENAME) as conn:
+        cur = conn.cursor()
+        cur.execute(
+            "SELECT user_id, password_hash FROM user WHERE username = ?", (username,)
+        )
+        user = cur.fetchone()
 
-    return reservation_id
+        if user is None:
+            return -1
 
-def add_medical_service(session_id, medical_service, capacity):
-    clinic = db_fetch('SELECT * FROM clinic WHERE clinic_id = ?', (session_id,))
-    if clinic:
+        user_id, password_hash = user
+
+        if check_password_hash(password_hash, password):
+            return user_id  # Login successful
+        else:
+            return -1
+        
+def login_clinic_db(clinic_username, password):
+    with sqlite3.connect(DBFILENAME) as conn:
+        cur = conn.cursor()
+        cur.execute(
+            "SELECT clinic_id, password_hash FROM clinic WHERE clinic_username = ?", (clinic_username,)
+        )
+        clinic_row = cur.fetchone()
+
+        if clinic_row is None:
+            return -1
+
+        #clinic_id, password_hash = clinic_row
+        clinic_id=clinic_row[0]
+        password_hash=clinic_row[1]
+
+        if check_password_hash(password_hash, password):
+            return clinic_id  # Login successful
+        else:
+            return -1
+
+
+def sign_up_user_db(
+    username, first_name, last_name, password_hash, gender, email, age, phone_number
+):
+    with sqlite3.connect(DBFILENAME) as conn:
+        cur = conn.cursor()
+        cur.execute(
+            "SELECT user_id FROM user WHERE username = ?", (username,)
+        )
+        existing_user = cur.fetchone()
+
+        if existing_user:
+            return -1 
+        password_hash = generate_password_hash(password)
+        
+        cur.execute(
+            "INSERT INTO user (username, first_name, last_name, password_hash, gender, email, age, phone_number) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+            (
+                username,
+                first_name,
+                last_name,
+                password_hash,
+                gender,
+                email,
+                age,
+                phone_number,
+            ),
+        )
+        conn.commit()
+
+        user_id = cur.lastrowid
+    return user_id
+
+def sign_up_clinic_db(
+    clinic_name, clinic_username, location, clinic_type, password
+):
+    if clinic_type not in ['State', 'Private']:
+        raise ValueError("Invalid clinic type. Must be 'State' or 'Private'.")
+    
+    with sqlite3.connect(DBFILENAME) as conn:
+        cur = conn.cursor()
+        cur.execute(
+            "SELECT clinic_id FROM clinic WHERE clinic_username = ?", (clinic_username,)
+        )
+        existing_clinic_user = cur.fetchone()
+
+        if existing_clinic_user:
+            return -1 
+        password_hash = generate_password_hash(password)
+        
+        cur.execute(
+            "INSERT INTO clinic (clinic_username, clinic_name, location, type, password_hash) VALUES (?, ?, ?, ?, ?)",
+            (
+                clinic_username, 
+                clinic_name, 
+                location, 
+                clinic_type,
+                password_hash
+            ),
+        )
+        conn.commit()
+
+        clinic_id = cur.lastrowid
+    return clinic_id
+
+
+def make_reservation_db(session_id, clinic_id, medical_service_id, reservation_date):
+    username = session_id['username']
+    
+    user_row = db_fetch('SELECT * FROM user WHERE username = ?', (username,))
+    if user_row:
+        user_id=user_row['user_id']
+        reservation_id = db_insert('INSERT INTO reservation (user_id, clinic_id, medical_service_id, reservation_date) VALUES (:user_id, :clinic_id, :medical_service_id, :reservation_date)', {'user_id': user_id, 'clinic_id': clinic_id, 'medical_service_id': medical_service_id, 'reservation_date': reservation_date})
+        return reservation_id
+    else:
+        return None
+
+def add_medical_service_db(session_id, service_name, capacity):
+    clinic_username = session_id['clinic_username']
+    
+    clinic_row= db_fetch('SELECT * FROM clinic WHERE clinic_username = ?', (clinic_username,))
+    
+    if clinic_row:
+        clinic_id=clinic_row['clinic_id']
         medical_service_id = db_insert(
             'INSERT INTO medical_service (clinic_id, service_name, capacity) VALUES (:clinic_id, :service_name, :capacity)',
-            {'clinic_id': session_id, 'service_name': medical_service, 'capacity': capacity}
+            {'clinic_id': clinic_id, 'service_name': service_name, 'capacity': capacity}
         )
         return medical_service_id  
     else:

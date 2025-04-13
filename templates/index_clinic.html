@@ -14,10 +14,6 @@
     <div class="col-12">
       {% if logged_in %}
       <p>Hello {{username}} !</p>
-      <p>Views {{views}}</p>
-      <form method="POST" action="/logout_clinic">
-        <input type="submit" value="Log out">
-      </form>
     {% else %}
     <h3>Welcome to Medical Access!</h3>
     <p>This web application allows users to search for registered clinics, view the number of available slots for each medical service, and book reservations easily.

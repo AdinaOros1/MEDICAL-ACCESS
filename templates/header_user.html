@@ -16,8 +16,6 @@
 
   <div class="collapse navbar-collapse justify-content-center" id="navbarNav">
     <ul class="navbar-nav ms-auto">
-      <li class="nav-item"><a class="nav-link" href="/sign_up">Sign up</a></li>
-      <li class="nav-item"><a class="nav-link" href="/login">Log in</a></li>
 
       {%if 'username' in session%}
       <li class="nav-item"><a class="nav-link" href="/make_reservation">Make reservation</a></li>
@@ -26,6 +24,10 @@
           <input class="btn btn-link nav-link" type="submit" value="Log out">
         </form>
       </li>
+      {%else%}
+      <li class="nav-item"><a class="nav-link" href="/sign_up">Sign up</a></li>
+      <li class="nav-item"><a class="nav-link" href="/login">Log in</a></li>
+
       {%endif%}
     </ul>
   </div>
