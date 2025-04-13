@@ -26,6 +26,8 @@ def db_fetch(query, args=(), all=False, db_name=DBFILENAME):
     return res
 
 
+
+
 def db_insert(query, args=(), db_name=DBFILENAME):
     with sqlite3.connect(db_name) as conn:
         cur = conn.execute(query, args)
@@ -105,7 +107,7 @@ def login_clinic_db(clinic_username, password):
 
 
 def sign_up_user_db(
-    username, first_name, last_name, password_hash, gender, email, age, phone_number
+    username, first_name, last_name, password, gender, email, age, phone_number
 ):
     with sqlite3.connect(DBFILENAME) as conn:
         cur = conn.cursor()
@@ -169,16 +171,43 @@ def sign_up_clinic_db(
     return clinic_id
 
 
-def make_reservation_db(session_id, clinic_id, medical_service_id, reservation_date):
+def make_reservation_db(session_id, medical_service_id, clinic_id, reservation_date):
     username = session_id['username']
+    if not username:
+        return None
     
     user_row = db_fetch('SELECT * FROM user WHERE username = ?', (username,))
+    
     if user_row:
         user_id=user_row['user_id']
+        
+        #to do verify availability
+        
         reservation_id = db_insert('INSERT INTO reservation (user_id, clinic_id, medical_service_id, reservation_date) VALUES (:user_id, :clinic_id, :medical_service_id, :reservation_date)', {'user_id': user_id, 'clinic_id': clinic_id, 'medical_service_id': medical_service_id, 'reservation_date': reservation_date})
         return reservation_id
     else:
         return None
+    
+def get_reservations(session_id):
+    username = session_id['username']
+    if not username:
+        return None
+    
+    user_row = db_fetch('SELECT * FROM user WHERE username = ?', (username,))
+    if user_row:
+        user_id=user_row['user_id']
+        
+        reservations = db_fetch('SELECT clinic_name, service_name, reservation_date, reservation_id FROM reservation join clinic on clinic.clinic_id=reservation.clinic_id join medical_service on medical_service.medical_service_id=reservation.medical_service_id where reservation.user_id=?', (user_id,), all=True)
+        return reservations
+    else:
+        return None
+    
+    
+    
+def get_clinic_and_service_names_db():
+    medical_services = db_fetch("SELECT service_name, clinic_name, medical_service_id, clinic.clinic_id FROM medical_service join clinic on clinic.clinic_id=medical_service.clinic_id", all=True)
+
+    return medical_services
 
 def add_medical_service_db(session_id, service_name, capacity):
     clinic_username = session_id['clinic_username']

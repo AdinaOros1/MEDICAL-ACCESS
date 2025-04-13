@@ -9,7 +9,6 @@ app = Flask(__name__)
 create_db.db_init()
 
 
-
 app.secret_key = b"ec68a703c4a06b435b5654c34da1d8c6ae35ffcf060c7d70a6ab4f9cec2f2025"
 
 
@@ -45,15 +44,11 @@ def verify_login():
     username = request.form["username"]
     password = request.form["password"]
     error = None
-    if username not in user_data:
-        error = "Incorrect username"
+    user_id = db_model.login_user_db(username, password)
+    if user_id == -1:
+        error = "Incorrect username/password"
         return Response(error)
 
-    else:
-        password_hash = user_data[username]["password_hash"]
-        if not (check_password_hash(password_hash, password)):
-            error = "Incorrect password"
-            return Response(error)
     if error is None:
         session.clear()
         session["username"] = username
@@ -97,23 +92,28 @@ def new_user_form():
 @app.post("/sign_up")
 def add_new_user():
     username = request.form.get("username")
+    first_name = request.form.get("first_name")
+    last_name = request.form.get("last_name")
+    gender = request.form.get("gender")
+    email = request.form.get("email")
+    age = request.form.get("age")
+    phone_number = request.form.get("phone_number")
     password = request.form.get("password")
     error = None
     if not (username):
         error = "Please enter a username"
     elif not (password):
         error = "Please enter a password"
-    elif username in user_data:
-        error = "This username already exists"
+    else:
+        user_id = db_model.sign_up_user_db(
+            username, first_name, last_name, password, gender, email, age, phone_number
+        )
+        if user_id == -1:
+            error = "This username already exists in the database"
     if error is None:
-        password_hash = generate_password_hash(password)
-        user_data[username] = {"views": 0, "password_hash": password_hash}
-        
-        #session.clear()
-        #session["username"] = username
-        #return redirect(url_for("home"))
-        return redirect(url_for("login_form"))
-    
+        session.clear()
+        session["username"] = username
+        return redirect(url_for("verify_login"))
     else:
         return render_template("sign_up.html", error=error)
 
@@ -122,7 +122,8 @@ def add_new_user():
 def index_user():
     if "username" in session:
         username = session["username"]
-        reservations = []  # Replace with real data if needed
+        reservations =db_model.get_reservations(session)  
+        print(reservations)
         return render_template(
             "index_user.html",
             logged_in=True,
@@ -157,8 +158,8 @@ def verify_login_clinic():
     clinic_username = request.form["clinic_username"]
     password = request.form["password"]
     error = None
-    clinic_id=db_model.login_clinic_db(clinic_username, password)
-    if clinic_id==-1:
+    clinic_id = db_model.login_clinic_db(clinic_username, password)
+    if clinic_id == -1:
         error = "Fail incorrect username/password"
         return Response(error)
     if error is None:
@@ -193,7 +194,9 @@ def sign_up_clinic():
     elif not (password):
         error = "Please enter a password"
     else:
-        clinic_id = db_model.sign_up_clinic_db(clinic_name, clinic_username, location, clinic_type, password)
+        clinic_id = db_model.sign_up_clinic_db(
+            clinic_name, clinic_username, location, clinic_type, password
+        )
         if clinic_id == -1:
             error = "This clinic username already exists in the database"
     if error is None:
@@ -222,8 +225,8 @@ def add_medical_service():
         capacity = int(capacity)
     except ValueError:
         return "Capacity must be a number", 400
-    
-    session_id = session 
+
+    session_id = session
 
     result = db_model.add_medical_service_db(session_id, service_name, capacity)
 
@@ -236,21 +239,33 @@ def add_medical_service():
 @app.get("/make_reservation")
 @login_required
 def make_a_reservation_form():
-    return render_template("make_reservation.html")
+    services_and_clinics = db_model.get_clinic_and_service_names_db()
+    return render_template("make_reservation.html", medical_services=services_and_clinics)
 
 
 @app.post("/make_reservation")
 def make_a_reservation():
-    clinic_name = request.form.get("clinic_name")
-    service_name = request.form.get("service_name")
+    service_and_clinic_id = request.form.get("service_id")
     reservation_date = request.form.get("reservation_date")
 
-    # Add validation & saving logic here
-    # Example:
-    if not service_name or not reservation_date or not clinic_name:
+    if not service_and_clinic_id or not reservation_date:
         return "All fields are required", 400
+    
+    if not session or 'username' not in session:
+        return "User not authenticated", 401
+    
+    splited = service_and_clinic_id.split("-")
+    service_id=splited[0]
+    clinic_id=splited[1]
+    
+    
+    
+    reservation_id = db_model.make_reservation_db(session, service_id, clinic_id, reservation_date)
 
-    # Save to your database model here (pseudo-code)
-    # model.add_medical_service(service_name, capacity)
+    if reservation_id:
+        return redirect(url_for("index_user"))
+    else:
+        return "Reservation failed", 500
+    
 
-    return redirect(url_for("index_clinic"))
+    

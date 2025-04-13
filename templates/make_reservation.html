@@ -11,33 +11,19 @@
   <body>
     <h1>Make a reservation</h1>
     <form method="POST" action="/make_reservation">
-        <!--
-      <input type="text" name="clinic_name" placeholder="Clinic name">
-      <input type="text" name="service_name" placeholder="Medical service">
-      <input type="date" name="reservation.reservation_date" placeholder="Date">
-       -->
-       <label for="clinic_name">Select Clinic:</label>
-       <select name="clinic_name" id="clinic_name" required>
-       <option value=""> </option>
-       {% for clinic_name in clinic %}
-        <option value="{{ clinic_name }}">{{ clinic_name }}</option>
-       {% endfor %}
-       </select>
+       
 
-  <br><br>
-
-  <label for="service_name">Select Medical Service:</label>
-  <select name="service_name" id="service_name" required>
-    <option value=""></option>
-    {% for service_name in medical_service %}
-      <option value="{{ service_name }}">{{ service_name }}</option>
+  <label for="service_id">Select Medical Service:</label>
+  <select name="service_id">
+    {% for service_name in medical_services %}
+      <option value="{{ service_name['medical_service_id'] }}-{{service_name['clinic_id']}}">{{ service_name['service_name'] }}+{{service_name['clinic_name']}}</option>
     {% endfor %}
   </select>
 
   <br><br>
 
   <label for="reservation_date">Select Date:</label>
-  <input type="date" name="reservation_date" id="reservation_date" required>
+  <input type="date" name="reservation_date">
 
   <br><br>
 

@@ -14,12 +14,11 @@
     <div class="col-12">
       {% if logged_in %}
       <p>Hello {{username}} !</p>
-      <p>Views {{views}}</p>
 
       <p>Here are your reservations:</p>
         <ul>
-          {% for reservations in reservation %}
-            <li>{{ reservation.reservation_date }} at {{ reservation.clinic_name }}</li>
+          {% for reservation in reservations %}
+            <li>{{ reservation['reservation_date'] }} at {{ reservation['clinic_name'] }} and this service: {{ reservation['service_name'] }}</li>
           {% endfor %}
         </ul>
 
