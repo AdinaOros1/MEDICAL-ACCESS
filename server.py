@@ -71,6 +71,7 @@ def home():
             "index.html",
             logged_in=True,
             username=username,
+            clinic_username=None,
         )
 
     elif "clinic_username" in session:
@@ -78,10 +79,11 @@ def home():
         return render_template(
             "index.html",
             logged_in=True,
-            username=clinic_username,
+            clinic_username=clinic_username,
+            username=None
         )
     else:
-        return render_template("index.html", logged_in=False, username=None, views=None)
+        return render_template("index.html", logged_in=False, username=None, clinic_username=None)
 
 
 @app.get("/sign_up")
@@ -143,7 +145,8 @@ def index_clinic():
         return render_template(
             "index_clinic.html",
             logged_in=True,
-            username=clinic_username,
+            clinic_username=clinic_username,
+            medical_services=db_model.get_services_and_capacity_for_clinic(clinic_username)
         )
     return render_template("index_clinic.html")
 
@@ -258,14 +261,24 @@ def make_a_reservation():
     service_id=splited[0]
     clinic_id=splited[1]
     
-    
-    
     reservation_id = db_model.make_reservation_db(session, service_id, clinic_id, reservation_date)
 
     if reservation_id:
         return redirect(url_for("index_user"))
     else:
         return "Reservation failed", 500
+    
+@app.post("/get_availability")
+def get_availability():
+    reservation_date = request.form.get("reservation_date")
+    if reservation_date:
+        availability=db_model.get_availability_db(reservation_date)
+        HTML='<ul>'
+        for row in availability:
+            HTML+=f'<li>{row[0]} {row[1]} : {row[2]}</li>'
+        HTML+='</ul>'
+        return HTML
+    return None
     
 
     

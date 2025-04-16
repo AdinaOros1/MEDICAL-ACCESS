@@ -182,11 +182,17 @@ def make_reservation_db(session_id, medical_service_id, clinic_id, reservation_d
         user_id=user_row['user_id']
         
         #to do verify availability
+        occupied=db_fetch('select count(reservation_id) from reservation where reservation_date=? and medical_service_id=?', (reservation_date, medical_service_id,), all=False)
+        total_capacity=db_fetch('select capacity from medical_service where medical_service_id=?', (medical_service_id,), all=False)
+        if int(occupied['count(reservation_id)'])>=int(total_capacity['capacity']):
+            return None
+        
         
         reservation_id = db_insert('INSERT INTO reservation (user_id, clinic_id, medical_service_id, reservation_date) VALUES (:user_id, :clinic_id, :medical_service_id, :reservation_date)', {'user_id': user_id, 'clinic_id': clinic_id, 'medical_service_id': medical_service_id, 'reservation_date': reservation_date})
         return reservation_id
     else:
         return None
+    
     
 def get_reservations(session_id):
     username = session_id['username']
@@ -209,6 +215,12 @@ def get_clinic_and_service_names_db():
 
     return medical_services
 
+def get_services_and_capacity_for_clinic(clinic_username):
+    clinic_id=db_fetch("select clinic_id from clinic where clinic_username=?", (clinic_username,), all=False) 
+    medical_services = db_fetch("select service_name, capacity from medical_service where clinic_id=?", (clinic_id['clinic_id'],), all=True)
+    return medical_services
+    
+
 def add_medical_service_db(session_id, service_name, capacity):
     clinic_username = session_id['clinic_username']
     
@@ -223,3 +235,19 @@ def add_medical_service_db(session_id, service_name, capacity):
         return medical_service_id  
     else:
         return None
+    
+def get_availability_db(reservation_date):
+    global_availability=[]
+    medical_services=get_clinic_and_service_names_db()
+    for medical_service_row in medical_services:
+        medical_service_id=medical_service_row['medical_service_id']
+        occupied=db_fetch('select count(reservation_id) from reservation where reservation_date=? and medical_service_id=?', (reservation_date, medical_service_id,), all=False)
+        total_capacity=db_fetch('select capacity from medical_service where medical_service_id=?', (medical_service_id,), all=False)
+        
+        availability=total_capacity['capacity']-occupied['count(reservation_id)']
+        clinic_name=medical_service_row['clinic_name']
+        service_name=medical_service_row['service_name']
+        global_availability.append((clinic_name, service_name, availability))
+    print(global_availability)   
+    
+    return global_availability

@@ -10,6 +10,7 @@
 
   <body>
     <h1>Make a reservation</h1>
+    
     <form method="POST" action="/make_reservation">
        
 
@@ -23,13 +24,34 @@
   <br><br>
 
   <label for="reservation_date">Select Date:</label>
-  <input type="date" name="reservation_date">
+  <input type="date" name="reservation_date" id="reservation_date">
 
   <br><br>
+  <p id="outputText"> </p> 
 
 
       <input type="submit" value="Make reservation">
     </form>
+    <script>
+        const reservation_date = document.getElementById('reservation_date');
+        const output = document.getElementById('outputText');
+    
+        reservation_date.addEventListener('change', async function () {
+        try {
+            const response = await fetch('/get_availability', {
+              method: 'POST',
+              body: new URLSearchParams({
+                //the first one is for flask from get form and the second one is from line 36
+                reservation_date: reservation_date.value
+              })
+            });
+            const result = await response.text();
+            output.innerHTML = 'Availability: ' + result;
+        } catch (error) {
+            output.innerHTML = 'Error: ' + error;
+          }
+        });
+      </script>
   </body>
 
 </html>
